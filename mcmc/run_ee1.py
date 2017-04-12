@@ -14,6 +14,7 @@ import sys
 def get_lc():
     time,flux = np.genfromtxt(
         '../data/lc.txt',unpack=True)
+    flux -= 1.0
     ferr = np.zeros_like(time) + 0.0001
     return time,flux,ferr
 
@@ -229,7 +230,7 @@ def main(runmpi=True,nw=100,th=6,bi=10,fr=10, circ=False):
     return sampler
 
 if __name__ == '__main__':
-    sampler = main(runmpi=False,nw=70,th=4,bi=4,fr=4)
+    sampler = main(runmpi=True,nw=270,th=4,bi=1,fr=6000)
 
     sys.exit()
 
