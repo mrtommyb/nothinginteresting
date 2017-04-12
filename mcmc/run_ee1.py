@@ -17,7 +17,7 @@ def get_lc():
     ferr = np.zeros_like(time) + 0.0001
     return time,flux,ferr
 
-def main(runmpi=True,nw=100,th=6,bi=10,fr=10):
+def main(runmpi=True,nw=100,th=6,bi=10,fr=10, circ=False):
 
     print('run in python3 env')
 
@@ -122,8 +122,8 @@ def main(runmpi=True,nw=100,th=6,bi=10,fr=10):
 
     M.cut_non_transit(8)
 
-    outfile = 'koi{0}_np{1}_prior{2}_dil{3}.hdf5'.format(
-        koi,nplanets,rho_prior,dil)
+    outfile = 'koi{0}_np{1}_prior{2}_dil{3}_circ{4}.hdf5'.format(
+        koi,nplanets,rho_prior,dil,circ)
 
     p0 = M.get_guess(nwalkers)
 
@@ -178,7 +178,7 @@ def main(runmpi=True,nw=100,th=6,bi=10,fr=10):
             M.onlytransits,M.tregion]
 
 
-        tom = tmod.logchi2
+        tom = tmod.logchi2_circ
 
         if runmpi:
             sampler = emcee.EnsembleSampler(nwalkers, l_var, tom,

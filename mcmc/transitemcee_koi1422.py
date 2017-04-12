@@ -322,6 +322,159 @@ def logchi2(fitsol,nplanets,rho_0,rho_0_unc,rho_prior,
 
     return logLtot
 
+def logchi2_circ(fitsol,nplanets,rho_0,rho_0_unc,rho_prior,
+    ld1_0,ld1_0_unc,ld2_0,ld2_0_unc,ldp_prior,
+    flux,err,fixed_sol,time,itime,ntt,tobs,omc,datatype,
+    n_ldparams=2,ldfileloc='/Users/tom/svn_code/tom_code/',
+    onlytransits=False,tregion=0.0):
+
+    """
+    fitsol should have the format
+    rho_0,zpt_0,ld1,ld2
+    plus for each planet
+    T0_0,per_0,b_0,rprs_0,ecosw_0,esinw_0
+
+    fixed_sol should have
+    dil, veloffset,rvamp,
+            occ,ell,alb
+
+    """
+    minf = -np.inf
+
+    rho = fitsol[0]
+    if rho < 1.E-8 or rho > 100.:
+        return minf
+
+    zpt = fitsol[1]
+    if np.abs(zpt) > 1.E-2:
+        return minf
+
+
+    ld1 = fitsol[2]
+    ld2 = fitsol[3]
+    #some lind darkening constraints
+    #from Burke et al. 2008 (XO-2b)
+    if ld1 < 0.0:
+        return minf
+    if ld1 + ld2 > 1.0:
+        return minf
+    if ld1 + 2.*ld2 < 0.0:
+        return minf
+    if ld2 < -0.8:
+        return minf
+
+    if n_ldparams == 2:
+        ld3, ld4 = 0.0,0.0
+
+
+    #T0, period, b, rprs, ecosw, esinw
+
+    rprs = fitsol[np.arange(nplanets)*6 + 7]
+    if np.any(rprs < 0.) or np.any(rprs > 0.5):
+        return minf
+
+    ecosw = 0.0
+
+    esinw = 0.0
+
+    #avoid parabolic orbits
+    ecc = 0.0
+
+    #avoid orbits where the planet enters the star
+    per = fitsol[np.arange(nplanets)*6 + 5]
+    ar = get_ar(rho,per)
+    if np.any(ecc > (1.-(1./ar))):
+        return minf
+
+    b = fitsol[np.arange(nplanets)*6 + 6]
+    if np.any(b < 0.) or np.any(b > 1.0 + rprs):
+        return minf
+
+    if onlytransits:
+        T0 = fitsol[np.arange(nplanets)*6 + 4]
+        if np.any(T0 < T0 - tregion) or np.any(T0 > T0 + tregion):
+            return minf
+
+
+    jitter_lc = fitsol[-1]
+
+
+    ### eccentricity max = 0.337
+    ### avoids crossing orbits
+    if np.any(ecc > 0.337):
+        return minf
+
+
+
+    if jitter_lc < 0.0:
+        return minf
+    err_jit = np.sqrt(err**2 + jitter_lc**2)
+    err_jit2 = err**2 + jitter_lc**2
+
+    lds = np.array([ld1,ld2,ld3,ld4])
+
+    #need to do some funky stuff
+    #so I can use the same calc_model as
+    #the other transitemcee routines
+
+    fitsol_model_calc = np.r_[fitsol[0:2],fitsol[4:]] #cut out limb darkening
+    fixed_sol_model_calc = np.r_[lds,fixed_sol]
+
+    time_model_calc = time
+    itime_model_calc = itime
+    datatype_model_calc  = datatype
+
+    model_lcrv = calc_model(fitsol_model_calc,
+        nplanets,fixed_sol_model_calc,
+        time_model_calc,itime_model_calc,ntt,tobs,omc,datatype_model_calc)
+
+    model_lc = model_lcrv - 1.
+
+
+
+    npt_lc = len(err_jit)
+
+
+
+    loglc = (
+        - (npt_lc/2.)*np.log(2.*np.pi)
+        - 0.5 * np.sum(np.log(err_jit2))
+        - 0.5 * np.sum((model_lc - flux)**2 / err_jit2)
+        )
+
+
+    if rho_prior:
+        logrho = (
+            - 0.5 * np.log(2.*np.pi)
+            - np.log(rho_0_unc)
+            - 0.5 * (rho_0 - rho)**2 / rho_0_unc**2
+            )
+    else:
+        logrho = 0.0
+
+    if ldp_prior:
+        logld1 = (
+            - 0.5 * np.log(2.*np.pi)
+            - np.log(ld1_0_unc)
+            - 0.5 * (ld1_0 - ld1)**2 / ld1_0_unc**2
+            )
+
+        logld2 = (
+            - 0.5 * np.log(2.*np.pi)
+            - np.log(ld2_0_unc)
+            - 0.5 * (ld2_0 - ld2)**2 / ld2_0_unc**2
+            )
+
+        logldp = logld1 + logld2
+    else:
+        logldp = 0.0
+
+    
+
+    logLtot = loglc + logrho + logldp 
+
+    return logLtot
+
 def beta_func(ec,x=0.44969629,y=1.79381137):
     p = (1./beta(x,y)) * ec**(x-1) * (1-ec)**(y-1)
     return p
