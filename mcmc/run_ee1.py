@@ -13,7 +13,7 @@ import sys
 
 def get_lc():
     time,flux = np.genfromtxt(
-        '../data/lc.txt',unpack=True)
+        '../data/lc-v2.txt',unpack=True)
     flux -= 1.0
     ferr = np.zeros_like(time) + 0.0001
     return time,flux,ferr
@@ -45,8 +45,8 @@ def main(runmpi=True,nw=100,th=6,bi=10,fr=10, circ=False):
     teff_unc = 250
     logg = 4.557
     logg_unc = 0.2
-    rho = 1.606
-    rho_unc = 0.6
+    rho = 2.2
+    rho_unc = 0.5
 
     dil = 0
     dil_unc = 0.0
