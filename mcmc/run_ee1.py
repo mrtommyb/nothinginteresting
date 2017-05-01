@@ -179,7 +179,10 @@ def main(runmpi=True,nw=100,th=6,bi=10,fr=10, circ=False):
             M.onlytransits,M.tregion]
 
 
-        tom = tmod.logchi2_circ
+        if circ:
+            tom = tmod.logchi2_circ
+        else:
+            tom = tmod.logchi2
 
         if runmpi:
             sampler = emcee.EnsembleSampler(nwalkers, l_var, tom,
