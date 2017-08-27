@@ -45,8 +45,8 @@ def main(runmpi=True,nw=100,th=6,bi=10,fr=10, circ=False):
     teff_unc = 250
     logg = 4.557
     logg_unc = 0.2
-    rho = 2.2
-    rho_unc = 0.5
+    rho = 2.33
+    rho_unc = 0.27
 
     dil = 0
     dil_unc = 0.0
